@@ -9,7 +9,9 @@
 let faceMesh;
 let video;
 let faces = [];
-let options = { maxFaces: 1, refineLandmarks: true, flipHorizontal: false };
+let options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: false };
+let statusMessage = 'Inicializando...';
+let statusDetail = '';
 
 const LANDMARKS = {
   leftEyeOuter: 33,
@@ -28,27 +30,69 @@ const LANDMARKS = {
   faceRight: 454,
 };
 
-function preload() {
-  // Load the faceMesh model
-  faceMesh = ml5.faceMesh(options);
+async function setup() {
+  createCanvas(640, 480);
+
+  try {
+    const camera = await pickVideoInput();
+
+    faceMesh = await ml5.faceMesh(options);
+
+    // Create the webcam video and hide it
+    video = createCapture({
+      video: {
+        deviceId: { exact: camera.deviceId }
+      },
+      audio: false
+    });
+    video.size(640, 480);
+    video.hide();
+
+    // Start detecting faces from the webcam video
+    faceMesh.detectStart(video, gotFaces);
+    statusMessage = camera.label
+      ? 'Usando ' + camera.label + '. Esperando rostro...'
+      : 'Usando la cámara disponible. Esperando rostro...';
+    statusDetail = '';
+  } catch (error) {
+    statusMessage = 'No se pudo iniciar el detector';
+    statusDetail = error && error.message ? error.message : String(error);
+  }
 }
 
-function setup() {
-  createCanvas(640, 480);
-  // Create the webcam video and hide it
-  video = createCapture(VIDEO);
-  video.size(640, 480);
-  video.hide();
-  // Start detecting faces from the webcam video
-  faceMesh.detectStart(video, gotFaces);
+async function pickVideoInput() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+    throw new Error('El navegador no soporta acceso a la cámara.');
+  }
+
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoInputs = devices.filter((device) => device.kind === 'videoinput');
+
+  if (videoInputs.length === 0) {
+    throw new Error('No se encontró ninguna cámara disponible en este equipo.');
+  }
+
+  const externalCamera = videoInputs.find((device) => {
+    const label = (device.label || '').toLowerCase();
+    return label.includes('webcam') || label.includes('usb') || label.includes('external');
+  });
+
+  return externalCamera || videoInputs[0];
 }
 
 function draw() {
+  background(0);
+
+  if (!video) {
+    drawStatus(statusMessage, statusDetail);
+    return;
+  }
+
   // Draw the webcam video
   image(video, 0, 0, width, height);
 
   if (faces.length === 0) {
-    drawStatus('Esperando rostro...');
+    drawStatus(statusMessage, statusDetail || 'Sin detecciones todavía');
     return;
   }
 
@@ -118,6 +162,8 @@ function draw() {
 function gotFaces(results) {
   // Save the output to the faces variable
   faces = results;
+  statusMessage = 'Rostro detectado';
+  statusDetail = '';
 }
 
 function getPoint(face, index) {
