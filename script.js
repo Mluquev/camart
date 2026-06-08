@@ -1,17 +1,10 @@
-/*
- * 👋 Hello! This is an ml5.js example made and shared with ❤️.
- * Learn more about the ml5.js project: https://ml5js.org/
- * ml5.js license and Code of Conduct: https://github.com/ml5js/ml5-next-gen/blob/main/LICENSE.md
- *
- * This example demonstrates face tracking on live video through ml5.faceMesh.
- */
-
 let faceMesh;
 let video;
 let faces = [];
-let options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: false };
 let statusMessage = 'Inicializando...';
 let statusDetail = '';
+
+const options = { maxFaces: 1, refineLandmarks: true, flipHorizontal: false };
 
 const LANDMARKS = {
   leftEyeOuter: 33,
@@ -30,25 +23,26 @@ const LANDMARKS = {
   faceRight: 454,
 };
 
+function preload() {
+  faceMesh = ml5.faceMesh(options);
+}
+
 async function setup() {
   createCanvas(640, 480);
+  textFont('Arial');
 
   try {
     const camera = await pickVideoInput();
 
-    faceMesh = await ml5.faceMesh(options);
-
-    // Create the webcam video and hide it
     video = createCapture({
       video: {
-        deviceId: { exact: camera.deviceId }
+        deviceId: { exact: camera.deviceId },
       },
-      audio: false
+      audio: false,
     });
     video.size(640, 480);
     video.hide();
 
-    // Start detecting faces from the webcam video
     faceMesh.detectStart(video, gotFaces);
     statusMessage = camera.label
       ? 'Usando ' + camera.label + '. Esperando rostro...'
@@ -88,7 +82,6 @@ function draw() {
     return;
   }
 
-  // Draw the webcam video
   image(video, 0, 0, width, height);
 
   if (faces.length === 0) {
@@ -158,9 +151,7 @@ function draw() {
   }
 }
 
-// Callback function for when faceMesh outputs data
 function gotFaces(results) {
-  // Save the output to the faces variable
   faces = results;
   statusMessage = 'Rostro detectado';
   statusDetail = '';
