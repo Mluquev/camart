@@ -12,6 +12,87 @@ const CAMERA_CAPTURE_HEIGHT = 560;
 
 const options = { maxFaces: 1, refineLandmarks: true, flipHorizontal: false };
 
+// Mostrar u ocultar el círculo amarillo que marca la sonrisa
+const SHOW_SMILE_CIRCLE = false;
+
+const GESTURE_LABELS = {
+  angry: 'ceño fruncido',
+  sad: 'tristeza',
+  kiss: 'kiss',
+  teethTogether: 'dientes juntos',
+  mouthOpenEyesOpen: 'boca abierta y ojos abiertos',
+  mouthOpen: 'boca abierta',
+  smile: 'sonrisa',
+  smileSmall: 'sonrisa',
+  openEyes: 'ojos abiertos',
+  leftEyeClosed: 'ojo izquierdo cerrado',
+  rightEyeClosed: 'ojo derecho cerrado',
+  neutral: 'neutral',
+};
+
+const ARTWORK_DETAILS = {
+  openEyes: {
+    title: 'Le Désespéré',
+    authorYear: 'Gustave Courbet, 1845',
+    note: 'Autorretrato de fuerte intensidad emocional.',
+  },
+  leftEyeClosed: {
+    title: 'Mujer Abstracta',
+    authorYear: 'Pablo Picasso, 1925',
+    note: 'Fragmentación de la figura y rasgos simplificados.',
+  },
+  rightEyeClosed: {
+    title: 'La joven de la perla',
+    authorYear: 'Johannes Vermeer, 1667',
+    note: 'Retrato célebre por la luz y la mirada directa.',
+  },
+  mouthOpenEyesOpen: {
+    title: 'Un Hombre Sorprendido',
+    authorYear: 'Joos van Craesbeeck, 1635',
+    note: 'Escena expresiva asociada a la sorpresa.',
+  },
+  mouthOpen: {
+    title: 'El Grito',
+    authorYear: 'Edvard Munch, 1893',
+    note: 'Símbolo visual de angustia existencial.',
+  },
+  kiss: {
+    title: 'Autorretrato con collar de espinas y colibrí',
+    authorYear: 'Frida Kahlo, 1940',
+    note: 'Autorretrato con carga simbólica y biográfica.',
+  },
+  sad: {
+    title: 'El Último Día de Pompeya',
+    authorYear: 'Karl Briullov, 1830',
+    note: 'Gran escena histórica de dramatismo clásico.',
+  },
+  angry: {
+    title: 'El Ángel Caído',
+    authorYear: 'Alexandre Cabanel, 1847',
+    note: 'Figura de tensión y rebeldía contenida.',
+  },
+  neutral: {
+    title: 'Retrato de Madame Rachele Osterlind',
+    authorYear: 'Amedeo Modigliani, 1919',
+    note: 'Retrato sobrio de formas alargadas y elegantes.',
+  },
+  teethTogether: {
+    title: 'La Sombra del Amor',
+    authorYear: 'Frederick Sandys, 1867',
+    note: 'Composición simbólica con tono enigmático.',
+  },
+  smile: {
+    title: 'Bufón con laud',
+    authorYear: 'Frans Hals, 1624',
+    note: 'Pintura con gesto vivo y energía barroca.',
+  },
+  smileSmall: {
+    title: 'La Mona Lisa',
+    authorYear: 'Leonardo da Vinci, 1503',
+    note: 'Retrato universalmente reconocido por su sonrisa.',
+  },
+};
+
 const LANDMARKS = {
   foreheadTop: 10,
   chin: 152,
@@ -41,18 +122,18 @@ function preload() {
   }
 
   gestureImages = {
-    openEyes: loadImage('Ojos abiertos.jpg'),
-    leftEyeClosed: loadImage('Ojos cerrados.png'),
-    rightEyeClosed: loadImage('perla.jpg'),
-    mouthOpenEyesOpen: loadImage('boca abierta ojos abiertos.jpg'),
-    mouthOpen: loadImage('el grito.jpg'),
-    kiss: loadImage('pico.jpg'),
-    sad: loadImage('sad.jpg'),
-    angry: loadImage('angry.jpg'),
-    neutral: loadImage('seria.jpg'),
-    teethTogether: loadImage('dientes juntos.jpg'),
-    smile: loadImage('sonrisa.jpg'),
-    smileSmall: loadImage('sonrisa2.jpeg'),
+    openEyes: loadImage('Le Désesperé Corbet 1845.jpg'),
+    leftEyeClosed: loadImage('Mujer Abstracta Picasso 1925.png'),
+    rightEyeClosed: loadImage('La joven de la perla Vermeer 1667.jpg'),
+    mouthOpenEyesOpen: loadImage('Un Hombre Sorprendido Craesbeeck 1635.jpg'),
+    mouthOpen: loadImage('El Grito Munch 1893.jpg'),
+    kiss: loadImage('Autoretrato con collar de espinas y colibrí Kahlo 1940.jpg'),
+    sad: loadImage('El Último Día De Pompeya Briulov 1830.jpg'),
+    angry: loadImage('El Ángel Caído Cabanel 1847.jpg'),
+    neutral: loadImage('Retrato de Madame Rachele Osterlind Modigliani 1919.jpg'),
+    teethTogether: loadImage('La Sombra Del Amor Sandys 1867.jpg'),
+    smile: loadImage('Bufón Con Laud Hals 1624.jpg'),
+    smileSmall: loadImage('La Mona Lisa Da Vinci 1503.jpeg'),
   };
 }
 
@@ -182,6 +263,8 @@ function draw() {
   const cameraW = layout.cameraW;
   const cameraH = layout.cameraH;
 
+  drawCameraTitle(layout);
+
   noStroke();
   fill(18);
   rect(cameraX - 8, cameraY - 8, cameraW + 16, cameraH + 16, 14);
@@ -275,7 +358,7 @@ function draw() {
 
   drawGesturePanel(detectedGesture, layout);
 
-  if (smileDetected || smallSmileDetected) {
+  if (SHOW_SMILE_CIRCLE && (smileDetected || smallSmileDetected)) {
     noFill();
     stroke(255, 200, 0);
     strokeWeight(3);
@@ -295,56 +378,57 @@ function gotFaces(results) {
 
 function detectGesture(metrics) {
   if (metrics.browsLifted && metrics.mouthNotDetected) {
-    return { key: 'angry', label: 'angry.jpg', image: gestureImages.angry };
+    return { key: 'angry', label: 'El Ángel Caído Cabanel 1847.jpg', image: gestureImages.angry };
   }
 
   if (metrics.browsDownTilt && metrics.mouthSlightlyOpen) {
-    return { key: 'sad', label: 'sad.jpg', image: gestureImages.sad };
+    return { key: 'sad', label: 'El Último Día De Pompeya Briulov 1830.jpg', image: gestureImages.sad };
   }
 
   if (metrics.kissDetected) {
-    return { key: 'kiss', label: 'pico.jpg', image: gestureImages.kiss };
+    return { key: 'kiss', label: 'Autoretrato con collar de espinas y colibrí Kahlo 1940.jpg', image: gestureImages.kiss };
   }
 
   if (metrics.teethTogetherDetected) {
-    return { key: 'teethTogether', label: 'dientes juntos.jpg', image: gestureImages.teethTogether };
+    return { key: 'teethTogether', label: 'La Sombra Del Amor Sandys 1867.jpg', image: gestureImages.teethTogether };
   }
 
   if (metrics.mouthOpenEyesOpenDetected) {
-    return { key: 'mouthOpenEyesOpen', label: 'boca abierta ojos abiertos.jpg', image: gestureImages.mouthOpenEyesOpen };
+    return { key: 'mouthOpenEyesOpen', label: 'Un Hombre Sorprendido Craesbeeck 1635.jpg', image: gestureImages.mouthOpenEyesOpen };
   }
 
   if (metrics.mouthOpenDetected) {
-    return { key: 'mouthOpen', label: 'el grito.jpg', image: gestureImages.mouthOpen };
+    return { key: 'mouthOpen', label: 'El Grito Munch 1893.jpg', image: gestureImages.mouthOpen };
   }
-
+  
   if (metrics.smileDetected) {
-    return { key: 'smile', label: 'sonrisa.jpg', image: gestureImages.smile };
+    return { key: 'smile', label: 'Bufón Con Laud Hals 1624.jpg', image: gestureImages.smile };
   }
 
   if (metrics.smallSmileDetected) {
-    return { key: 'smileSmall', label: 'sonrisa2.jpeg', image: gestureImages.smileSmall };
+    return { key: 'smileSmall', label: 'La Mona Lisa Da Vinci 1503.jpeg', image: gestureImages.smileSmall };
   }
 
   if (metrics.leftEyeOpen && metrics.rightEyeOpen) {
-    return { key: 'openEyes', label: 'Ojos abiertos.jpg', image: gestureImages.openEyes };
+    return { key: 'openEyes', label: 'Le Désesperé Corbet 1845.jpg', image: gestureImages.openEyes };
   }
 
   if (!metrics.leftEyeOpen && metrics.rightEyeOpen) {
-    return { key: 'leftEyeClosed', label: 'Ojos cerrados.png', image: gestureImages.leftEyeClosed };
+    return { key: 'leftEyeClosed', label: 'Mujer Abstracta Picasso 1925.png', image: gestureImages.leftEyeClosed };
   }
 
   if (metrics.leftEyeOpen && !metrics.rightEyeOpen) {
-    return { key: 'rightEyeClosed', label: 'perla.jpg', image: gestureImages.rightEyeClosed };
+    return { key: 'rightEyeClosed', label: 'La joven de la perla Vermeer 1667.jpg', image: gestureImages.rightEyeClosed };
   }
 
-  return { key: 'neutral', label: 'seria.jpg', image: gestureImages.neutral };
+  return { key: 'neutral', label: 'Retrato de Madame Rachele Osterlind Modigliani 1919.jpg', image: gestureImages.neutral };
 }
 
 function drawGesturePanel(gestureState, layout = getLayout()) {
   const panelX = layout.panelX;
   const panelY = layout.panelY;
   const panelH = layout.panelH;
+  const artwork = ARTWORK_DETAILS[gestureState.key] || ARTWORK_DETAILS.neutral;
 
   noStroke();
   fill(16, 16, 16, 235);
@@ -362,7 +446,7 @@ function drawGesturePanel(gestureState, layout = getLayout()) {
   const previewX = panelX + 12;
   const previewY = panelY + 58;
   const previewW = IMAGE_PANEL_WIDTH - 24;
-  const previewH = Math.max(180, panelH - 120);
+  const previewH = Math.max(150, panelH - 170);
 
   fill(255, 255, 255, 18);
   rect(previewX, previewY, previewW, previewH, 8);
@@ -382,9 +466,17 @@ function drawGesturePanel(gestureState, layout = getLayout()) {
     text('Sin imagen disponible', previewX + 12, previewY + 12);
   }
 
-  fill(200);
+  const infoY = previewY + previewH + 10;
+
+  fill(245);
   textSize(11);
-  text('Gesto activo: ' + gestureState.key, panelX + 12, panelY + panelH - 24);
+  text('Obra: ' + artwork.title, previewX, infoY, previewW, 18);
+
+  fill(210);
+  text('Autor: ' + artwork.authorYear, previewX, infoY + 18, previewW, 18);
+
+  fill(185);
+  text(artwork.note, previewX, infoY + 36, previewW, 28);
 }
 
 function getPoint(face, index) {
@@ -421,6 +513,23 @@ function drawStatus(line1, line2 = '', layout = getLayout()) {
     textSize(14);
     text(line2, boxX + 12, boxY + 30);
   }
+}
+
+function drawCameraTitle(layout = getLayout()) {
+  const cameraCenterX = layout.cameraX + layout.cameraW / 2;
+  const titleText = GESTURE_LABELS[currentGesture ? currentGesture.key : 'neutral'] || 'neutral';
+  const titleY = layout.cameraY - 10;
+  const boxWidth = Math.min(260, layout.cameraW);
+  const boxX = cameraCenterX - boxWidth / 2;
+
+  noStroke();
+  fill(0, 0, 0, 150);
+  rect(boxX, titleY - 24, boxWidth, 28, 10);
+
+  textSize(20);
+  fill(255);
+  textAlign(CENTER, BOTTOM);
+  text(titleText, cameraCenterX, titleY);
 }
 
 function getLayout() {
